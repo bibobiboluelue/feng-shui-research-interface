@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Feng Shui Research Interface</title>
+    <script src="tailwind.js"></script>
+    <style>
+        /* ============================================
+           FONT DEFINITIONS
+        ============================================ */
+        @font-face {
+            font-family: 'Noto Serif SC';
+            font-style: normal;
+            font-weight: 300;
+            font-display: swap;
+            src: url('noto_serif_sc.woff2') format('woff2');
+        }
+        @font-face {
+            font-family: 'Noto Serif SC';
+            font-style: normal;
+            font-weight: 400;
+            font-display: swap;
+            src: url('noto_serif_sc.woff2') format('woff2');
+        }
+        @font-face {
+            font-family: 'Noto Serif SC';
+            font-style: normal;
+            font-weight: 600;
+            font-display: swap;
+            src: url('noto_serif_sc.woff2') format('woff2');
+        }
+
+        /* ============================================
+           COLOR PALETTE — 中式赛博朋克
+           --bg-deep:    #c8a84b  金黄背景（云纹底色）
+           --bg-mid:     #1a5c5c  深青绿面板
+           --teal:       #3ecfcf  青绿主色
+           --teal-dark:  #2aa8a8  青绿深色
+           --teal-panel: rgba(26,92,92,0.9) 青绿面板
+           --gold:       #d4a843  金黄描边
+           --gold-light: #f0c96a  金黄高亮
+           --text-main:  #e8f4f4  主文字
+           --text-dim:   #8ab8c0  次要文字
+           --accent-red: #e8365d  强调红
+           --sidebar-bg: #2a1f6e  边框紫
+           --sidebar-border: #5b52c8 紫色描边
+        ============================================ */
+
+        :root {
+            --bg-deep:    #c8a84b;
+            --bg-mid:     #1a5c5c;
+            --teal:       #6af4f4;
+            --teal-dark:  #4ee0e0;
+            --teal-panel: rgba(26,92,92,0.92);
+            --gold:       #f0c040;
+            --gold-light: #ffe066;
+            --text-main:  #e8f4f4;
+            --text-dim:   #9ed4d4;
+            --accent-red: #e8365d;
+            --sidebar-bg: #2a1f6e;
+            --sidebar-border: #5b52c8;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: 'Noto Serif SC', serif;
+            background-color: #e8c040;
+            color: var(--text-main);
+            /* 黄色底 + 中国云纹 SVG pattern */
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cdefs%3E%3Cstyle%3E.c%7Bfill:none;stroke:%23c8980a;stroke-width:1.4;opacity:0.5%7D%3C/style%3E%3C/defs%3E%3C!-- 云纹单元 --%3E%3Cpath class='c' d='M10,60 Q10,40 30,40 Q30,20 50,20 Q70,20 70,40 Q90,40 90,60 Q90,80 70,80 Q70,100 50,100 Q30,100 30,80 Q10,80 10,60Z'/%3E%3Cpath class='c' d='M-50,60 Q-50,40 -30,40 Q-30,20 -10,20 Q10,20 10,40 Q30,40 30,60 Q30,80 10,80 Q10,100 -10,100 Q-30,100 -30,80 Q-50,80 -50,60Z'/%3E%3Cpath class='c' d='M70,60 Q70,40 90,40 Q90,20 110,20 Q130,20 130,40 Q150,40 150,60 Q150,80 130,80 Q130,100 110,100 Q90,100 90,80 Q70,80 70,60Z'/%3E%3Cpath class='c' d='M10,-60 Q10,-80 30,-80 Q30,-100 50,-100 Q70,-100 70,-80 Q90,-80 90,-60 Q90,-40 70,-40 Q70,-20 50,-20 Q30,-20 30,-40 Q10,-40 10,-60Z'/%3E%3Cpath class='c' d='M10,120 Q10,100 30,100 Q30,80 50,80 Q70,80 70,100 Q90,100 90,120 Q90,140 70,140 Q70,160 50,160 Q30,160 30,140 Q10,140 10,120Z'/%3E%3C/svg%3E");
+            background-size: 120px 120px;
+            overflow: hidden;
+        }
+
+        /* ============================================
+           SCROLLBAR
+        ============================================ */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: var(--sidebar-bg); }
+        ::-webkit-scrollbar-thumb { background: var(--sidebar-border); border-radius: 3px; }
+
+        /* ============================================
+           SIDEBAR
+        ============================================ */
+        #sidebar {
+            background: linear-gradient(180deg, #2e2478 0%, #1e1555 50%, #2a1f6e 100%);
+            border-right: 2px solid var(--sidebar-border);
+            box-shadow: 2px 0 20px rgba(91,82,200,0.4);
+            z-index: 10000;
+        }
+
+        .sidebar-header {
+            background: linear-gradient(90deg, rgba(91,82,200,0.3), rgba(91,82,200,0.1));
+            border-bottom: 1px solid var(--sidebar-border);
+            padding: 1.25rem 1.5rem;
+        }
+
+        .sidebar-title {
+            color: var(--gold-light);
+            font-size: 1.1rem;
+            letter-spacing: 0.25em;
+            text-shadow: 0 0 12px rgba(212,168,67,0.6);
+        }
+
+        /* Category headers in sidebar */
+        .cat-header {
+            color: #a89ee8;
+            font-size: 0.7rem;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            padding: 0.4rem 0.5rem;
+            border-left: 2px solid var(--sidebar-border);
+            margin-bottom: 0.4rem;
+            background: rgba(91,82,200,0.15);
+        }
+
+        /* Directory links */
+        .dir-link {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.5rem;
+            padding: 0.35rem 0.75rem;
+            color: #c4bef5;
+            font-size: 0.85rem;
+            border: 1px solid transparent;
+            transition: all 0.2s;
+            position: relative;
+        }
+        .dir-link::before {
+            content: '□';
+            color: var(--sidebar-border);
+            font-size: 0.7rem;
+            flex-shrink: 0;
+        }
+        .dir-link-title {
+            flex: 1;
+            min-width: 0;
+        }
+        .dir-link-status {
+            display: none;
+            flex-shrink: 0;
+            padding: 0.08rem 0.35rem;
+            color: #123838;
+            background: linear-gradient(135deg, var(--gold-light), var(--teal));
+            border: 1px solid rgba(255,244,184,0.75);
+            box-shadow: 0 0 10px rgba(106,244,244,0.45);
+            font-size: 0.58rem;
+            letter-spacing: 0.12em;
+            line-height: 1.35;
+        }
+        .dir-link:hover {
+            color: #e8e4ff;
+            border-color: rgba(91,82,200,0.5);
+            background: rgba(91,82,200,0.2);
+        }
+        .dir-link.active {
+            color: #ffffff;
+            border-color: var(--sidebar-border);
+            background: rgba(91,82,200,0.35);
+            font-weight: 600;
+        }
+        .dir-link.active::before { content: '■'; color: var(--teal); }
+        .dir-link.completed {
+            color: #fff8c8;
+            border-color: rgba(240,192,64,0.9);
+            background:
+                linear-gradient(90deg, rgba(240,192,64,0.28), rgba(106,244,244,0.16)),
+                rgba(91,82,200,0.22);
+            box-shadow:
+                inset 3px 0 0 var(--gold-light),
+                0 0 14px rgba(240,192,64,0.28);
+            font-weight: 600;
+        }
+        .dir-link.completed::before {
+            content: '✓';
+            color: var(--gold-light);
+            font-size: 0.85rem;
+            text-shadow: 0 0 8px rgba(240,192,64,0.85);
+        }
+        .dir-link.completed .dir-link-status {
+            display: inline-block;
+        }
+        .dir-link.completed.active {
+            border-color: var(--teal);
+            background:
+                linear-gradient(90deg, rgba(240,192,64,0.34), rgba(106,244,244,0.26)),
+                rgba(91,82,200,0.38);
+            box-shadow:
+                inset 3px 0 0 var(--teal),
+                0 0 18px rgba(106,244,244,0.35),
+                0 0 16px rgba(240,192,64,0.26);
+        }
+
+        .sidebar-footer {
+            border-top: 1px solid rgba(91,82,200,0.4);
+            padding: 0.75rem 1rem;
+            color: rgba(168,158,232,0.6);
+            font-size: 0.7rem;
+            text-align: center;
+            letter-spacing: 0.1em;
+        }
+
+        /* ============================================
+           TOP HEADER
+        ============================================ */
+        #top-header {
+            display: none;
+        }
+
+        /* Nav buttons */
+        .nav-btn {
+            padding: 0.4rem 1.2rem;
+            background: #3d35a0;
+            border: 2px solid #7a72e8;
+            color: #e8e4ff;
+            font-family: 'Noto Serif SC', serif;
+            font-size: 0.85rem;
+            letter-spacing: 0.1em;
+            cursor: pointer;
+            transition: all 0.2s;
+            clip-path: polygon(6px 0%, 100% 0%, calc(100% - 6px) 100%, 0% 100%);
+        }
+        .nav-btn:hover:not(:disabled) {
+            background: #5548c8;
+            border-color: #a89ee8;
+            box-shadow: 0 0 12px rgba(91,82,200,0.6);
+        }
+        .nav-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+        .progress-text {
+            color: var(--gold-light);
+            font-size: 0.8rem;
+            letter-spacing: 0.15em;
+            text-shadow: 0 0 8px rgba(212,168,67,0.5);
+        }
+
+        /* ============================================
+           MAIN CONTENT CARD  (青绿色面板 + 中式边框)
+        ============================================ */
+        .archive-card {
+            background: linear-gradient(160deg, #1e7070 0%, #185858 60%, #144848 100%);
+            border: 1px solid var(--gold);
+            box-shadow:
+                0 0 0 3px rgba(212,168,67,0.12),
+                0 0 40px rgba(26,92,92,0.6),
+                inset 0 0 60px rgba(10,40,40,0.4);
+            position: relative;
+        }
+
+        /* 四角装饰 */
+        .archive-card::before,
+        .archive-card::after {
+            content: '';
+            position: absolute;
+            width: 24px;
+            height: 24px;
+            border-color: var(--gold-light);
+            border-style: solid;
+        }
+        .archive-card::before {
+            top: 6px; left: 6px;
+            border-width: 2px 0 0 2px;
+        }
+        .archive-card::after {
+            bottom: 6px; right: 6px;
+            border-width: 0 2px 2px 0;
+        }
+        /* 另外两角用伪元素包装器实现 */
+        .card-corner-tr, .card-corner-bl {
+            position: absolute;
+            width: 24px;
+            height: 24px;
+            border-color: var(--gold-light);
+            border-style: solid;
+            pointer-events: none;
+        }
+        .card-corner-tr { top: 6px; right: 6px; border-width: 2px 2px 0 0; }
+        .card-corner-bl { bottom: 6px; left: 6px; border-width: 0 0 2px 2px; }
+
+        /* ============================================
+           ENTRY LABEL
+        ============================================ */
+        .entry-label {
+            color: var(--teal);
+            font-size: 0.65rem;
+            letter-spacing: 0.3em;
+            text-transform: uppercase;
+            text-shadow: 0 0 8px rgba(62,207,207,0.6);
+        }
+
+        /* ============================================
+           TITLE
+        ============================================ */
+        #concept-title {
+            color: var(--gold-light);
+            text-shadow:
+                0 0 20px rgba(212,168,67,0.5),
+                0 0 40px rgba(212,168,67,0.2);
+            letter-spacing: 0.2em;
+        }
+
+        /* ============================================
+           SECTION HEADERS
+        ============================================ */
+        .section-header {
+            color: var(--teal);
+            font-size: 0.95rem;
+            letter-spacing: 0.12em;
+            padding: 0.4rem 0.75rem;
+            border-left: 3px solid var(--teal);
+            background: linear-gradient(90deg, rgba(62,207,207,0.12), transparent);
+            margin-bottom: 1rem;
+            text-shadow: 0 0 8px rgba(62,207,207,0.4);
+        }
+
+        /* ============================================
+           TEXT CONTENT AREAS
+        ============================================ */
+        .content-panel {
+            background: rgba(62,207,207,0.06);
+            border: 1px solid rgba(62,207,207,0.2);
+            padding: 1rem 1.25rem;
+            color: var(--text-main);
+            line-height: 1.9;
+            font-size: 0.92rem;
+        }
+
+        .editable-content:hover {
+            background: rgba(62,207,207,0.08);
+            outline: 1px dashed rgba(62,207,207,0.4);
+            cursor: text;
+        }
+
+        /* ============================================
+           IMAGE AREA
+        ============================================ */
+        .editable-image-container {
+            background: rgba(10,40,40,0.6);
+            border: 1px solid rgba(62,207,207,0.35);
+            position: relative;
+        }
+
+        /* ============================================
+           DIVIDER
+        ============================================ */
+        .divider {
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--gold), transparent);
+            margin: 1.75rem 0;
+            opacity: 0.5;
+        }
+
+        /* ============================================
+           QUIZ SECTION
+        ============================================ */
+        .quiz-panel {
+            background: rgba(10,40,40,0.55);
+            border: 1px solid var(--gold);
+            position: relative;
+        }
+        .quiz-panel.correct-flash {
+            animation: quizCorrectPanel 900ms ease-out;
+        }
+        .quiz-panel::before, .quiz-panel::after {
+            content: '';
+            position: absolute;
+            width: 14px; height: 14px;
+            border-color: var(--gold);
+            border-style: solid;
+        }
+        .quiz-panel::before { top: 4px; left: 4px; border-width: 1px 0 0 1px; }
+        .quiz-panel::after  { bottom: 4px; right: 4px; border-width: 0 1px 1px 0; }
+
+        .quiz-header {
+            color: var(--gold-light);
+            font-size: 0.75rem;
+            letter-spacing: 0.25em;
+            text-transform: uppercase;
+            border-bottom: 1px solid rgba(212,168,67,0.3);
+            padding-bottom: 0.6rem;
+            margin-bottom: 1rem;
+        }
+
+        /* Quiz option labels */
+        .quiz-option-label {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            padding: 0.6rem 0.9rem;
+            border: 1px solid rgba(62,207,207,0.15);
+            cursor: pointer;
+            transition: all 0.2s;
+            background: rgba(62,207,207,0.04);
+            margin-bottom: 0.5rem;
+        }
+        .quiz-option-label:hover {
+            border-color: var(--teal-dark);
+            background: rgba(62,207,207,0.1);
+        }
+        .quiz-option-label:has(input:checked) {
+            border-color: var(--teal);
+            background: rgba(62,207,207,0.15);
+            box-shadow: 0 0 8px rgba(62,207,207,0.2);
+        }
+
+        input[type="radio"] {
+            accent-color: var(--teal);
+            margin-top: 3px;
+            flex-shrink: 0;
+        }
+
+        /* Submit button */
+        .submit-btn {
+            padding: 0.5rem 1.75rem;
+            background: linear-gradient(135deg, rgba(62,207,207,0.2), rgba(42,168,168,0.3));
+            border: 1px solid var(--teal);
+            color: var(--teal);
+            font-family: 'Noto Serif SC', serif;
+            font-size: 0.85rem;
+            letter-spacing: 0.15em;
+            cursor: pointer;
+            transition: all 0.2s;
+            clip-path: polygon(8px 0%, 100% 0%, calc(100% - 8px) 100%, 0% 100%);
+        }
+        .submit-btn:hover:not(:disabled) {
+            background: linear-gradient(135deg, rgba(62,207,207,0.35), rgba(42,168,168,0.45));
+            box-shadow: 0 0 16px rgba(62,207,207,0.4);
+        }
+        .submit-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+        .correct-burst {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
+            z-index: 4;
+            opacity: 0;
+        }
+        .correct-burst.show {
+            animation: correctBurstFade 1300ms ease-out;
+        }
+        .correct-burst-badge {
+            min-width: 12rem;
+            padding: 0.8rem 1.5rem;
+            color: #123838;
+            background: linear-gradient(135deg, var(--gold-light), var(--teal));
+            border: 2px solid #fff4b8;
+            box-shadow:
+                0 0 24px rgba(106,244,244,0.85),
+                0 0 40px rgba(240,192,64,0.55);
+            text-align: center;
+            letter-spacing: 0.18em;
+            font-size: 1rem;
+            font-weight: 600;
+            clip-path: polygon(12px 0%, 100% 0%, calc(100% - 12px) 100%, 0% 100%);
+            transform: scale(0.72) translateY(14px);
+        }
+        .correct-burst.show .correct-burst-badge {
+            animation: correctBadgePop 1300ms cubic-bezier(0.2, 0.85, 0.2, 1);
+        }
+        .correct-burst-badge span {
+            display: block;
+            color: rgba(18,56,56,0.72);
+            font-size: 0.58rem;
+            letter-spacing: 0.28em;
+            margin-top: 0.25rem;
+            text-transform: uppercase;
+        }
+
+        @keyframes quizCorrectPanel {
+            0% {
+                border-color: var(--gold);
+                box-shadow: none;
+            }
+            28% {
+                border-color: var(--teal);
+                box-shadow:
+                    0 0 0 2px rgba(106,244,244,0.35),
+                    0 0 34px rgba(106,244,244,0.45),
+                    inset 0 0 28px rgba(106,244,244,0.18);
+            }
+            100% {
+                border-color: var(--gold);
+                box-shadow: none;
+            }
+        }
+        @keyframes correctBurstFade {
+            0% { opacity: 0; }
+            12% { opacity: 1; }
+            68% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+        @keyframes correctBadgePop {
+            0% {
+                transform: scale(0.72) translateY(14px);
+                filter: blur(1px);
+            }
+            18% {
+                transform: scale(1.08) translateY(0);
+                filter: blur(0);
+            }
+            34% {
+                transform: scale(1) translateY(0);
+            }
+            100% {
+                transform: scale(0.98) translateY(-10px);
+            }
+        }
+
+        /* ============================================
+           TYPOGRAPHY
+        ============================================ */
+        h1, h2, h3 { font-weight: 400; }
+
+        strong { color: var(--teal); }
+
+        .ref-text {
+            color: var(--text-dim);
+            font-size: 0.8rem;
+            font-style: italic;
+            border-left: 2px solid rgba(62,207,207,0.3);
+            padding-left: 0.75rem;
+            margin-top: 0.75rem;
+        }
+
+        /* ============================================
+           MOBILE MENU BUTTON
+        ============================================ */
+        .mobile-menu-btn {
+            color: var(--teal);
+            background: transparent;
+            border: 1px solid rgba(62,207,207,0.3);
+            padding: 0.3rem 0.5rem;
+        }
+    </style>
+</head>
+<body class="flex h-screen overflow-hidden">
+
+    <!-- ============================================
+         全屏边框覆盖层 — 使用真实 frame.png
+         只覆盖主内容区（main），不遮侧边栏
+         pointer-events:none 确保不阻挡交互
+    ============================================ -->
+    <div id="screen-frame" style="
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 9999;
+        pointer-events: none;
+    ">
+        <!-- 边框图片：left 偏移等于侧边栏宽度(15rem)，让边框从主内容区左边开始 -->
+        <img src="pic/frame.png" alt="" style="
+            position: absolute;
+            top: 0;
+            left: 15rem;
+            width: calc(100% - 15rem);
+            height: 100%;
+            object-fit: fill;
+            display: block;
+            pointer-events: none;
+        ">
+    </div>
+
+    <!-- Left Sidebar: Directory -->
+    <aside class="w-60 flex flex-col z-10 relative transition-all duration-300" id="sidebar" style="min-width:15rem">
+        <div class="sidebar-header flex justify-between items-center">
+            <h2 class="sidebar-title">知识归档</h2>
+            <button id="toggle-sidebar" class="focus:outline-none hidden md:block" style="color:var(--teal);font-size:1.1rem;">◀</button>
+        </div>
+        <nav class="flex-1 overflow-y-auto p-3">
+            <ul class="space-y-1 text-sm" id="directory-list">
+                <!-- Directory generated by JS -->
+            </ul>
+        </nav>
+        <div class="sidebar-footer">
+            Experiment ID: FS-2026-06
+        </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 overflow-y-auto flex flex-col relative">
+
+        <!-- Content Container -->
+        <div class="max-w-3xl w-full mx-auto p-4 md:p-8 pb-20">
+
+            <article class="archive-card p-6 md:p-10" id="concept-container">
+                <!-- Corner decorations -->
+                <div class="card-corner-tr"></div>
+                <div class="card-corner-bl"></div>
+
+                <!-- Title -->
+                <header class="mb-8 text-center">
+                    <div class="entry-label mb-3">&#9672; Archive Entry &#9672;</div>
+                    <h1 class="text-4xl md:text-5xl p-2 inline-block" id="concept-title">
+                        门冲煞
+                    </h1>
+                </header>
+
+                <!-- Illustration Area -->
+                <figure class="mb-8 relative group editable-image-container p-3 flex justify-center items-center min-h-[240px]">
+                    <img id="concept-image" src="" alt="Concept Diagram" class="max-w-full h-auto object-contain max-h-[320px] transition-opacity group-hover:opacity-50">
+                </figure>
+
+                <!-- Section 1: Traditional -->
+                <section class="mb-7">
+                    <h2 class="section-header">传统释义 · Traditional Interpretation</h2>
+                    <div class="content-panel" id="concept-traditional">
+                        《阳宅十书》记载："卧房迎门，房门冲床，主大凶。"当床位直接暴露在房门的动线上时，被视为气流冲撞，煞气入室，会导致居住者睡眠不安、心神不宁。
+                    </div>
+                </section>
+
+                <div class="divider"></div>
+
+                <!-- Section 2: Scientific -->
+                <section class="mb-8">
+                    <h2 class="section-header">科学转译 · Scientific Translation</h2>
+                    <div class="content-panel" id="concept-scientific">
+                        <p class="mb-2"><strong>【领地防御过载】</strong></p>
+                        <p>基于进化心理学与空间防御理论，睡眠状态下人类的警惕性最低。当床正对门时，睡眠区域完全暴露在未知入侵动线上，这会强制触发潜意识中的基因防御机制，导致大脑杏仁核保持低度活跃，从而无法进入深度睡眠。</p>
+                        <p class="ref-text">参考: Appleton, J. (1975). The Experience of Landscape (Prospect-Refuge Theory).</p>
+                    </div>
+                </section>
+
+                <!-- Section 3: Knowledge Check -->
+                <section class="quiz-panel p-5">
+                    <div id="correct-burst" class="correct-burst" aria-hidden="true">
+                        <div class="correct-burst-badge">
+                            &#10003; 回答正确
+                            <span>Answer Verified</span>
+                        </div>
+                    </div>
+
+                    <div class="quiz-header flex items-center justify-between">
+                        <span>&#9670; 知识测验 · Knowledge Check</span>
+                        <span style="color:var(--text-dim);font-size:0.7rem;letter-spacing:0.1em;">Researcher Use Only</span>
+                    </div>
+
+                    <div class="p-2 mb-4" style="color:var(--text-main);font-size:0.92rem;line-height:1.7;" id="quiz-question">
+                        从环境心理学的角度来看，"门冲煞"导致睡眠质量下降的主要机制是什么？
+                    </div>
+
+                    <div id="quiz-options">
+                        <!-- Options generated by JS -->
+                    </div>
+
+                    <!-- Submit Button & Feedback Area -->
+                    <div class="mt-5 flex items-center justify-between" style="border-top:1px solid rgba(212,168,67,0.25);padding-top:1rem;">
+                        <button id="quiz-submit-btn" class="submit-btn">提交答案</button>
+                        <div id="quiz-feedback" class="text-sm font-medium hidden"></div>
+                    </div>
+                </section>
+
+            </article>
+        </div>
+
+    </main>    <!-- 左下角：上一个按钮 (body直接子元素，fixed定位不受容器影响) -->
+    <div style="position:fixed;bottom:12vh;left:calc(15rem + (100vw - 15rem)*0.10);z-index:10001;display:flex;flex-direction:column;align-items:center;gap:4px;">
+        <button id="prev-btn" class="nav-btn">&#9664; 上一个</button>
+    </div>
+
+    <!-- 右下角：进度 + 下一个按钮 -->
+    <div style="position:fixed;bottom:12vh;right:calc((100vw - 15rem)*0.10);z-index:10001;display:flex;flex-direction:column;align-items:center;gap:6px;">
+        <div class="progress-text" id="progress-indicator" style="font-size:0.75rem;">进度: 1 / 11</div>
+        <button id="next-btn" class="nav-btn">下一个 &#9654;</button>
+    </div>
+
+    <!-- 全部完成弹窗 -->
+    <div id="completion-modal" style="display:none;position:fixed;inset:0;z-index:19999;align-items:center;justify-content:center;background:rgba(10,8,30,0.85);backdrop-filter:blur(4px);" onclick="this.style.display='none'">
+        <div class="modal-inner" style="background:linear-gradient(160deg,#1e7070 0%,#144848 100%);border:2px solid var(--gold);padding:3rem 4rem;text-align:center;position:relative;transform:scale(0.7);opacity:0;transition:transform 0.4s cubic-bezier(0.175,0.885,0.32,1.275),opacity 0.3s ease;max-width:480px;width:90vw;" onclick="event.stopPropagation()">
+            <div style="position:absolute;top:8px;left:8px;width:20px;height:20px;border-top:2px solid var(--gold-light);border-left:2px solid var(--gold-light);"></div>
+            <div style="position:absolute;top:8px;right:8px;width:20px;height:20px;border-top:2px solid var(--gold-light);border-right:2px solid var(--gold-light);"></div>
+            <div style="position:absolute;bottom:8px;left:8px;width:20px;height:20px;border-bottom:2px solid var(--gold-light);border-left:2px solid var(--gold-light);"></div>
+            <div style="position:absolute;bottom:8px;right:8px;width:20px;height:20px;border-bottom:2px solid var(--gold-light);border-right:2px solid var(--gold-light);"></div>
+            <div style="font-size:3rem;margin-bottom:0.75rem;">&#10022;</div>
+            <div style="color:var(--gold-light);font-size:0.7rem;letter-spacing:0.4em;margin-bottom:1rem;text-transform:uppercase;">Perfect Completion</div>
+            <h2 style="color:var(--gold-light);font-size:2rem;letter-spacing:0.2em;margin-bottom:1rem;text-shadow:0 0 20px rgba(240,192,96,0.6);">完美完成</h2>
+            <p style="color:var(--teal);font-size:0.9rem;letter-spacing:0.1em;margin-bottom:0.5rem;">全部 11 道题目均已正确回答</p>
+            <p style="color:var(--text-dim);font-size:0.8rem;margin-bottom:2rem;">风水知识归档研究完成</p>
+            <div style="height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);margin-bottom:1.5rem;"></div>
+            <button onclick="document.getElementById('completion-modal').style.display='none'" style="padding:0.5rem 2rem;background:#3d35a0;border:2px solid #7a72e8;color:#e8e4ff;font-family:'Noto Serif SC',serif;font-size:0.9rem;letter-spacing:0.15em;cursor:pointer;clip-path:polygon(8px 0%,100% 0%,calc(100% - 8px) 100%,0% 100%);">关闭</button>
+        </div>
+    </div>
+
+    <script>
+        // 顺序与侧边栏一致：进化心理×6 → 声光物理×2 → 空气动力×1 → 视觉心理×2
+        const conceptsData = [
+            { id:'c1', category:'进化心理与空间防御类', title:'横梁压顶', image:'pic/横梁压顶.png',
+              traditional:'《鲁班经》中有"梁压人，主不安"之说。风水认为，横梁位于床铺、座位或餐桌上方时，会形成压顶之势。居住者长期处于梁下，容易感到精神紧张、思绪受阻，甚至影响健康与运势。',
+              scientific:'人对头顶低矮且带有明显重量感的结构存在天然的空间警觉反应，这类结构会压缩头顶可视空间的立体角，使大脑持续处理潜在的物理威胁信号。环境心理学研究发现，长期处于这种低矮压迫结构下方，会持续小幅提升体内压力激素水平，并降低空间舒适度评分；天花板高度还会影响认知加工方式——较低的天花板更容易诱发具体、聚焦式思维，而非开阔联想式思维，长期处于此类空间中容易出现注意力难以舒展、思绪受限的主观感受。',
+              quiz:{ question:'环境心理学认为"横梁压顶"造成心理负荷的主要原因是什么？', options:['横梁会改变房间上方气流的流速，使停留者误以为通风不均匀，从而产生轻微烦躁。','横梁的线条会切分天花板视觉边界，让人更难判断家具与墙面的比例关系。','人类对头顶低矮且有重量感的结构存在天然警觉，容易持续处理潜在压迫信号。','横梁会让室内声音反射更集中，使谈话和脚步声在局部空间中被主观放大。'], correctAnswer:2 }
+            },
+            { id:'c2', category:'进化心理与空间防御类', title:'反弓煞', image:'pic/反弓煞.png',
+              traditional:'住宅位于弯道外侧时，被称为反弓煞。风水认为道路如弓，弯曲向外的一侧会将气流带离住宅，不利于聚气与安定。',
+              scientific:'人类视觉系统对快速扩张、迫近的物体存在高度保守的先天防御反应，这一机制由大脑中负责快速威胁识别的视觉通路驱动，几乎不需要有意识加工就能触发警觉。位于道路外弯一侧的住宅，由于车辆在弯道处转向时速度和轨迹变化更大，居住者在该侧更频繁地承受车辆侧向逼近的视觉刺激与噪音冲击，这会持续激活上述先天警觉机制，使居住者更容易产生潜意识层面的风险感知和环境压力，即便日常并未发生实际交通事故。',
+              quiz:{ question:'位于道路外弯处（反弓煞）的建筑，给居民带来环境压力的主要心理机制是什么？', options:['对弯道处侧向逼近的车辆和噪音保持更高风险感知，持续触发潜意识警觉。','道路弧线会削弱住宅入口的视觉中心感，使居住者更难形成稳定的空间记忆。','弯道外侧通常更容易积累夜间灯光残影，导致居民在傍晚后产生视觉疲劳。','弯曲道路改变了街区步行路径，使日常出入距离变长并降低生活便利度评价。'], correctAnswer:0 }
+            },
+            { id:'c3', category:'进化心理与空间防御类', title:'孤阴煞', image:'pic/孤阴煞.png',
+              traditional:'风水认为，住宅周边若长期邻近医院、殡仪馆、墓地等阴性场所，容易形成孤阴煞，影响居住者的精神状态。',
+              scientific:'人类大脑会对特定类型的场所形成强烈而持久的情绪联想记忆，这类记忆一旦建立，往往会在后续接触相关线索（如经过、眺望或居住邻近该场所）时被自动激活，即使当事人并未直接经历负面事件本身。当住宅长期邻近具有强烈负面社会联想意义的场所时，这种反复激活的情绪记忆会持续增加居住者的潜在心理负荷，表现为不安、回避或低落等情绪反应的累积，并可能在长期内影响主观生活满意度评价。',
+              quiz:{ question:'"孤阴煞"影响居住者主观生活满意度的现代心理学解释是什么？', options:['邻近特殊公共设施会让街区功能更单一，居民因此减少随机消费和日常停留。','这类场所的建筑外观通常较为封闭，会降低街道界面的开放感和可亲近性。','特殊场所周边人流节奏较不稳定，使居民更难预测日常环境的安静程度。','具有负面社会意义的场所会反复激活消极联想与情绪预期，增加潜在心理负荷。'], correctAnswer:3 }
+            },
+            { id:'c4', category:'进化心理与空间防御类', title:'路冲煞', image:'pic/路冲煞.png',
+              traditional:'《阳宅十书》中有"直路冲门不吉"的说法。当住宅正对笔直道路或通道尽头时，被称为路冲煞。',
+              scientific:'与反弓煞类似，人脑中负责快速威胁探测的视觉通路对正面、持续扩大的迫近目标具有天然的高度敏感性，这是一种跨物种保留的先天防御机制。当住宅正对一条笔直道路或通道的尽头时，居住者会反复暴露在车辆、行人等运动目标正面接近的视觉场景中，这类场景比侧向或随机出现的运动更容易触发该先天警觉通路，使居住者在该方向上维持更高水平的潜意识环境警觉，进而提升整体环境压力感受。',
+              quiz:{ question:'人类为何会对"路冲煞"格局产生本能的不适感？', options:['笔直道路会强化纵深透视，使住宅立面看起来更窄，从而形成视觉比例失衡。','人对正面持续接近的运动目标高度敏感，容易触发天然警觉和威胁感知。','道路尽头的空间边界较少，居民可能更难判断街区的实际尺度与方向关系。','长直道路会让远处声音更容易被注意到，使居住者误判环境噪声来源。'], correctAnswer:1 }
+            },
+            { id:'c5', category:'进化心理与空间防御类', title:'孤峰煞', image:'pic/孤峰煞.png',
+              traditional:'住宅周围缺乏邻近建筑，仅有单独一栋高楼孤立存在时，被称为孤峰煞，不利于人际关系与居住稳定。',
+              scientific:'认知科学研究发现，个体所感知到的社会孤立程度会直接影响认知功能表现，包括注意力调控、执行功能与整体认知灵活性，这一效应独立于客观社交网络规模而存在。当住宅周边长期缺乏邻近建筑和日常可见的邻里活动时，居住者获得自然社会接触与环境可见性反馈的机会会明显减少，这种长期的低社会可见性环境容易加深个体的主观孤立感，并通过认知层面的连锁反应进一步影响情绪状态与居住舒适度。',
+              quiz:{ question:'从城市环境研究角度，过于孤立的建筑（孤峰煞）主要剥夺了居民的哪种心理需求？', options:['它削弱了街区的商业可达性，使居民对周边服务设施的可获得性感到不足。','它减少了建筑之间的遮挡关系，让居民在开阔环境中更容易感到视线暴露。','它降低自然社会接触、邻里活动可见性和归属感反馈，容易加深主观孤立。','它改变了建筑群的天际线节奏，使居民对城市景观的审美评价出现下降。'], correctAnswer:2 }
+            },
+            { id:'c6', category:'进化心理与空间防御类', title:'割脚煞', image:'pic/割脚煞.png',
+              traditional:'住宅下方或附近存在快速流动的河流、道路、高架桥等设施时，被称为割脚煞。',
+              scientific:'与声煞类似，紧邻高速流动的车流或水体会带来持续性的噪声与低频振动，这类长期暴露同样会持续激活体内的应激反应系统，影响睡眠质量与情绪稳定性。与单纯噪音不同的是，这类设施还会在居住者的日常视觉和身体感知层面持续传递"边界不稳定"的信号——窗外或脚下持续高速移动的车流、水流缺乏静止的参照物，这种持续的动态视觉输入会削弱居住者对居住空间边界与领域感的主观稳定性评价。',
+              quiz:{ question:'紧邻快速流动的道路或河流（割脚煞）为何会削弱居住者的心理安全感？', options:['持续噪声、低频振动和高速动态视觉输入，会削弱居住空间边界与领域感的稳定性。','道路或河流会形成明显线性景观，使住宅立面在视觉上显得更难融入周边环境。','快速流动的界面会改变居民对窗外距离的判断，使近景和远景层次变得混杂。','这类设施往往占用较多城市空间，使居民认为住宅周边公共活动面积被压缩。'], correctAnswer:0 }
+            },
+            { id:'c7', category:'声光物理与动线冲突类', title:'水火相冲', image:'pic/水火相冲.png',
+              traditional:'《阳宅三要》认为："水火不宜相射。"厨房属火，卫生间属水，两者相邻时被称为水火相冲。风水认为此布局会导致家庭关系紧张、健康受损。',
+              scientific:'从建筑物理角度看，卫生间是住宅内部湿度最高的区域之一，其水汽会以扩散和气流两种方式向相邻空间迁移。当厨房与卫生间共用一面墙或门对门紧邻时，湿度更容易在两者交界处的低温表面凝结，形成持续性的潮气和霉菌滋生条件，并伴随排污、油烟等多种气味相互渗透。建筑科学研究表明，这种长期的湿气与异味交叉污染会显著降低室内空气质量，并增加日常清洁与维护的难度，从而影响整体居住体验。',
+              quiz:{ question:'从现代建筑卫生的角度看，"水火相冲"主要带来了什么隐患？', options:['厨房和卫生间的动线相邻会降低空间私密性，让家庭成员对功能分区产生混乱感。','两类空间的照明需求差异较大，紧邻布置可能让局部亮度和色温不够统一。','厨房热源和卫生间冷湿界面相邻，会让居住者主观上感到冷热分区不清晰。','湿气、异味、油烟和排污气味更容易交叉渗透，增加空气质量与清洁维护压力。'], correctAnswer:3 }
+            },
+            { id:'c8', category:'声光物理与动线冲突类', title:'声煞', image:'pic/声煞.png',
+              traditional:'风水认为，持续的机械噪音、交通噪音等都属于声煞，长期处于噪声环境中容易导致心神不宁。',
+              scientific:'长期暴露于持续噪音环境会激活下丘脑-垂体-肾上腺这一经典应激反应通路，导致体内压力激素水平持续偏高。这种激素水平的长期紊乱不仅会干扰深度睡眠阶段的正常比例，影响记忆巩固和身体恢复过程，还会直接削弱负责专注与决策的前额叶脑区的正常神经活动效率。大量环境健康研究已经证实，慢性噪音暴露与睡眠质量下降、注意力表现降低及情绪稳定性变差之间存在明确关联，环境噪音也因此被多国公共卫生机构列为重要的环境健康风险因素。',
+              quiz:{ question:'科学研究表明，长期暴露于环境噪音（声煞）中会直接导致哪些负面影响？', options:['噪音会让人更频繁地切换注意对象，短期内似乎提升了对外界变化的察觉。','持续噪音会激活应激反应，影响睡眠质量、注意力表现和情绪稳定性。','噪音会掩盖部分细碎背景声，使居住者误以为环境整体更加单纯和可控。','长期声刺激会改变空间的主观距离感，使房间显得比实际面积更紧凑。'], correctAnswer:1 }
+            },
+            { id:'c9', category:'空气动力与微气候类', title:'天斩煞', image:'pic/天斩煞.png',
+              traditional:'风水中将两栋高楼之间形成的狭窄缝隙称为天斩煞。古人认为此类空间如同被巨斧劈开，容易形成急促气流。',
+              scientific:'建筑风环境工程学中存在被称为"建筑峡道效应"的现象：当气流经过两栋建筑之间的狭窄通道时，由于流通截面积骤然减小，气流会被迫加速，行人活动高度的风速可能因此显著放大。多项风洞实验和数值模拟研究证实，这类狭窄建筑间距区域常常出现远高于周边开阔区域的瞬时阵风风速，不仅会降低行人舒适度、增加噪音，还可能对临近建筑的门窗结构和周边环境造成持续性的气流冲击。',
+              quiz:{ question:'"天斩煞"在建筑环境学中主要对应哪种物理现象？', options:['高层建筑外墙反射太阳辐射，使狭窄街道局部温度在午后持续升高。','两栋建筑遮挡天空视域，导致行人对街道开阔度和方向感的判断下降。','气流通过狭窄建筑缝隙时被加速，形成建筑峡道效应或局部强风现象。','建筑立面材质差异造成光线闪烁，使临近住户更容易产生视觉不适。'], correctAnswer:2 }
+            },
+            { id:'c10', category:'视觉心理与神经认知类', title:'白虎煞', image:'pic/白虎煞.png',
+              traditional:'若住宅右侧建筑明显高于左侧，或存在大型压迫性结构，则被称为白虎煞。',
+              scientific:'人对周边建筑的压迫感知与该建筑在视野中所占据的立体角直接相关，这是环境心理学中一个有明确测量方法的指标：建筑占据的视野范围越大、越靠近观察者，主观压迫感评分越高。当住宅一侧存在明显高大且距离较近的建筑时，该侧会在居住者的日常视野中占据远超对侧的立体角比例，这种长期的视野不对称不仅会造成主观的视觉压迫感，还会因高大建筑的遮挡而显著降低该侧的自然采光时长，形成压迫感与采光不足的叠加效应。',
+              quiz:{ question:'不对称的大型压迫性结构（白虎煞）主要给居民带来怎样的环境体验？', options:['一侧高大近距建筑占据过多视野并遮挡采光，造成视觉压迫和空间失衡。','建筑高度差会让街区轮廓更有识别度，但也可能降低居民对入口位置的记忆。','高大建筑会改变地面风向，让居民对室外风声和门窗震动更加敏感。','不对称建筑群会让道路界面显得更复杂，使步行者在街区中更难选择路径。'], correctAnswer:0 }
+            },
+            { id:'c11', category:'视觉心理与神经认知类', title:'缺角煞', image:'pic/缺角煞.png',
+              traditional:'传统阳宅风水强调住宅应尽量方正完整。当户型出现明显缺失或不规则凹陷时，被称为缺角煞。',
+              scientific:'空间认知研究中的可读性理论指出，规则、对称的空间结构更容易被大脑构建为清晰的认知地图，而不规则或存在明显凹陷缺失的户型会显著增加空间记忆和方向判断所需的认知资源。当居住者反复在不规则空间中进行日常活动时，大脑需要持续投入额外的认知负荷来维持准确的空间定位和物品位置记忆，这种长期的隐性认知负担容易表现为方向感变差、物品摆放位置记忆模糊，以及在该空间中行动效率的整体下降。',
+              quiz:{ question:'环境认知研究如何解释人们对"缺角煞"（不规则空间）的不适感？', options:['不规则空间会让家具布置更依赖个体习惯，进而影响人们对房间功能的统一理解。','缺角位置会改变墙面连续性，使房间的装饰视觉重心更容易偏向某一侧。','户型凹陷会制造更多转角和阴影，使居住者对局部空间的亮度评价下降。','不规则结构会增加空间记忆和方向判断所需资源，降低空间可读性并提高认知负荷。'], correctAnswer:3 }
+            }
+        ];
+
+        let currentIndex = 0;
+        const answeredCorrectly = new Array(conceptsData.length).fill(false);
+
+        const els = {
+            title:        document.getElementById('concept-title'),
+            image:        document.getElementById('concept-image'),
+            traditional:  document.getElementById('concept-traditional'),
+            scientific:   document.getElementById('concept-scientific'),
+            quizQuestion: document.getElementById('quiz-question'),
+            quizOptions:  document.getElementById('quiz-options'),
+            quizSubmitBtn:document.getElementById('quiz-submit-btn'),
+            quizFeedback: document.getElementById('quiz-feedback'),
+            correctBurst: document.getElementById('correct-burst'),
+            prevBtn:      document.getElementById('prev-btn'),
+            nextBtn:      document.getElementById('next-btn'),
+            progress:     document.getElementById('progress-indicator'),
+            dirList:      document.getElementById('directory-list'),
+            sidebar:      document.getElementById('sidebar'),
+            toggleSidebarBtn: document.getElementById('toggle-sidebar'),
+            mobileMenuBtn:    document.getElementById('mobile-menu-btn')
+        };
+
+        function init() {
+            renderDirectory();
+            loadConcept(currentIndex);
+            setupEventListeners();
+        }
+
+        function renderDirectory() {
+            const categories = {};
+            conceptsData.forEach((c, i) => {
+                if (!categories[c.category]) categories[c.category] = [];
+                categories[c.category].push({ ...c, index: i });
+            });
+            els.dirList.innerHTML = '';
+            for (const [cat, items] of Object.entries(categories)) {
+                const li = document.createElement('li');
+                li.className = 'mb-4';
+                const catHeader = document.createElement('div');
+                catHeader.className = 'cat-header select-none flex items-center cursor-pointer';
+                catHeader.innerHTML = '<svg class="w-3 h-3 mr-1 transition-transform transform rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>' + cat;
+                const ul = document.createElement('ul');
+                ul.className = 'space-y-1 pl-2 mt-1';
+                catHeader.onclick = () => { ul.classList.toggle('hidden'); catHeader.querySelector('svg').classList.toggle('rotate-90'); };
+                items.forEach(item => {
+                    const a = document.createElement('a');
+                    a.href = '#';
+                    a.dataset.index = item.index;
+                    a.className = 'dir-link' + (item.index === currentIndex ? ' active' : '');
+                    a.innerHTML = '<span class="dir-link-title">' + item.title + '</span><span class="dir-link-status">已完成</span>';
+                    a.onclick = (e) => { e.preventDefault(); currentIndex = item.index; loadConcept(currentIndex); };
+                    const itemLi = document.createElement('li');
+                    itemLi.appendChild(a);
+                    ul.appendChild(itemLi);
+                });
+                li.appendChild(catHeader);
+                li.appendChild(ul);
+                els.dirList.appendChild(li);
+            }
+        }
+
+        function loadConcept(index) {
+            const data = conceptsData[index];
+            els.title.textContent = data.title;
+            els.image.src = data.image;
+            els.traditional.innerHTML = data.traditional;
+            els.scientific.innerHTML = data.scientific;
+            els.quizQuestion.textContent = data.quiz.question;
+            els.quizOptions.innerHTML = '';
+            data.quiz.options.forEach((opt, i) => {
+                const label = document.createElement('label');
+                label.className = 'quiz-option-label';
+                label.innerHTML = '<input type="radio" name="quiz" value="' + i + '"><div style="color:var(--text-main);font-size:0.88rem;line-height:1.6;">' + opt + '</div>';
+                els.quizOptions.appendChild(label);
+            });
+            els.quizFeedback.classList.add('hidden');
+            els.quizSubmitBtn.disabled = false;
+            document.querySelectorAll('input[name="quiz"]').forEach(r => r.disabled = false);
+            if (answeredCorrectly[index]) {
+                els.quizFeedback.innerHTML = '&#10003; 已答对！可重新作答';
+                els.quizFeedback.className = 'text-sm font-medium';
+                els.quizFeedback.style.color = 'var(--teal)';
+                els.quizFeedback.classList.remove('hidden');
+            }
+            updateNavigation();
+            updateDirectoryHighlight();
+        }
+
+        function updateNavigation() {
+            els.prevBtn.disabled = currentIndex === 0;
+            els.nextBtn.disabled = currentIndex === conceptsData.length - 1;
+            els.progress.textContent = '进度: ' + (currentIndex + 1) + ' / ' + conceptsData.length;
+        }
+
+        function updateDirectoryHighlight() {
+            els.dirList.querySelectorAll('a').forEach(link => {
+                const i = parseInt(link.dataset.index);
+                link.className = 'dir-link'
+                    + (i === currentIndex ? ' active' : '')
+                    + (answeredCorrectly[i] ? ' completed' : '');
+                link.querySelector('.dir-link-title').textContent = conceptsData[i].title;
+            });
+        }
+
+        function showCompletionModal() {
+            const modal = document.getElementById('completion-modal');
+            modal.style.display = 'flex';
+            requestAnimationFrame(() => {
+                modal.querySelector('.modal-inner').style.transform = 'scale(1)';
+                modal.querySelector('.modal-inner').style.opacity = '1';
+            });
+        }
+
+        function playCorrectAnimation() {
+            const quizPanel = els.correctBurst.closest('.quiz-panel');
+            quizPanel.classList.remove('correct-flash');
+            els.correctBurst.classList.remove('show');
+            void quizPanel.offsetWidth;
+            quizPanel.classList.add('correct-flash');
+            els.correctBurst.classList.add('show');
+        }
+
+        function setupEventListeners() {
+            els.prevBtn.onclick = () => { if (currentIndex > 0) { currentIndex--; loadConcept(currentIndex); } };
+            els.nextBtn.onclick = () => { if (currentIndex < conceptsData.length - 1) { currentIndex++; loadConcept(currentIndex); } };
+            els.quizSubmitBtn.onclick = () => {
+                const sel = document.querySelector('input[name="quiz"]:checked');
+                if (!sel) {
+                    els.quizFeedback.textContent = '请先选择一个答案。';
+                    els.quizFeedback.className = 'text-sm font-medium';
+                    els.quizFeedback.style.color = 'var(--text-dim)';
+                    els.quizFeedback.classList.remove('hidden');
+                    return;
+                }
+                if (parseInt(sel.value) === conceptsData[currentIndex].quiz.correctAnswer) {
+                    els.quizFeedback.innerHTML = '&#10003; 回答正确！';
+                    els.quizFeedback.className = 'text-sm font-medium';
+                    els.quizFeedback.style.color = 'var(--teal)';
+                    els.quizFeedback.classList.remove('hidden');
+                    playCorrectAnimation();
+                    answeredCorrectly[currentIndex] = true;
+                    els.quizSubmitBtn.disabled = true;
+                    document.querySelectorAll('input[name="quiz"]').forEach(r => r.disabled = true);
+                    updateDirectoryHighlight();
+                    if (answeredCorrectly.every(v => v)) setTimeout(showCompletionModal, 500);
+                } else {
+                    els.quizFeedback.innerHTML = '&#10007; 回答错误，请重新选择。';
+                    els.quizFeedback.className = 'text-sm font-medium';
+                    els.quizFeedback.style.color = 'var(--accent-red)';
+                    els.quizFeedback.classList.remove('hidden');
+                }
+            };
+            els.toggleSidebarBtn.onclick = () => {
+                const isOpen = !els.sidebar.classList.contains('w-0');
+                els.sidebar.style.minWidth = isOpen ? '0' : '15rem';
+                els.sidebar.classList.toggle('w-0', isOpen);
+                els.sidebar.classList.toggle('overflow-hidden', isOpen);
+            };
+        }
+
+        init();
+    </script>
+</body>
+</html>
